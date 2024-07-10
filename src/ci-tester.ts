@@ -29,106 +29,106 @@ export function processWrapper(
   }
 }
 
-function pushImage(
-  srcImage: string,
-  destImage: string,
-  extraArgs: string | undefined,
-  token: string
-): void {
-  console.log(`copying image: ${srcImage} ${destImage}`)
-  const args = [
-    'copy',
-    `docker://${srcImage}`,
-    `docker://${destImage}`,
-    `--dest-creds=token:${token}`
-  ]
-  if (extraArgs) {
-    const parts = extraArgs.split(' ')
-    for (const part of parts) {
-      args.push(part.trim())
-    }
-  }
-  processWrapper('skopeo', args, {
-    encoding: 'utf-8',
-    shell: false,
-    stdio: 'inherit'
-  })
-}
+// function pushImage(
+//   srcImage: string,
+//   destImage: string,
+//   extraArgs: string | undefined,
+//   token: string
+// ): void {
+//   console.log(`copying image: ${srcImage} ${destImage}`)
+//   const args = [
+//     'copy',
+//     `docker://${srcImage}`,
+//     `docker://${destImage}`,
+//     `--dest-creds=token:${token}`
+//   ]
+//   if (extraArgs) {
+//     const parts = extraArgs.split(' ')
+//     for (const part of parts) {
+//       args.push(part.trim())
+//     }
+//   }
+//   processWrapper('skopeo', args, {
+//     encoding: 'utf-8',
+//     shell: false,
+//     stdio: 'inherit'
+//   })
+// }
 
-async function loadImages(
-  directory: string,
-  owner: string,
-  packageName: string,
-  token: string,
-  delay: number
-): Promise<void> {
-  if (!fs.existsSync(`${directory}/prime`)) {
-    throw Error(`file: ${directory}/prime doesn't exist`)
-  }
+// async function loadImages(
+//   directory: string,
+//   owner: string,
+//   packageName: string,
+//   token: string,
+//   delay: number
+// ): Promise<void> {
+//   if (!fs.existsSync(`${directory}/prime`)) {
+//     throw Error(`file: ${directory}/prime doesn't exist`)
+//   }
 
-  const fileContents = fs.readFileSync(`${directory}/prime`, 'utf-8')
-  for (let line of fileContents.split('\n')) {
-    const original = line
-    if (line.length > 0) {
-      if (line.includes('//')) {
-        line = line.substring(0, line.indexOf('//'))
-      }
-      line = line.trim()
+//   const fileContents = fs.readFileSync(`${directory}/prime`, 'utf-8')
+//   for (let line of fileContents.split('\n')) {
+//     const original = line
+//     if (line.length > 0) {
+//       if (line.includes('//')) {
+//         line = line.substring(0, line.indexOf('//'))
+//       }
+//       line = line.trim()
 
-      // split into parts
-      const parts = line.split('|')
-      if (parts.length !== 2 && parts.length !== 3) {
-        throw Error(`prime file format error: ${original}`)
-      }
-      const srcImage = parts[0]
-      let tag
-      if (parts[1]) {
-        if (parts[1].includes('@')) {
-          tag = parts[1]
-        } else {
-          tag = `:${parts[1]}`
-        }
-      } else {
-        if (parts[0].includes('@')) {
-          tag = `${parts[0].substring(parts[0].indexOf('@'))}`
-        } else if (parts[0].includes(':')) {
-          tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
-        } else {
-          throw Error(`no tag specified in ${parts[0]}`)
-        }
-      }
-      const destImage = `ghcr.io/${owner}/${packageName}${tag}`
-      const args = parts.length === 3 ? parts[2] : undefined
-      pushImage(srcImage, destImage, args, token)
-    }
-    if (delay > 0) {
-      // sleep to allow packages to be created in order
-      await new Promise(f => setTimeout(f, delay))
-    }
-  }
-}
+//       // split into parts
+//       const parts = line.split('|')
+//       if (parts.length !== 2 && parts.length !== 3) {
+//         throw Error(`prime file format error: ${original}`)
+//       }
+//       const srcImage = parts[0]
+//       let tag
+//       if (parts[1]) {
+//         if (parts[1].includes('@')) {
+//           tag = parts[1]
+//         } else {
+//           tag = `:${parts[1]}`
+//         }
+//       } else {
+//         if (parts[0].includes('@')) {
+//           tag = `${parts[0].substring(parts[0].indexOf('@'))}`
+//         } else if (parts[0].includes(':')) {
+//           tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
+//         } else {
+//           throw Error(`no tag specified in ${parts[0]}`)
+//         }
+//       }
+//       const destImage = `ghcr.io/${owner}/${packageName}${tag}`
+//       const args = parts.length === 3 ? parts[2] : undefined
+//       pushImage(srcImage, destImage, args, token)
+//     }
+//     if (delay > 0) {
+//       // sleep to allow packages to be created in order
+//       await new Promise(f => setTimeout(f, delay))
+//     }
+//   }
+// }
 
-async function deleteDigests(
-  directory: string,
-  packageIdByDigest: Map<string, string>,
-  githubPackageRepo: GithubPackageRepo
-): Promise<void> {
-  if (fs.existsSync(`${directory}/prime-delete`)) {
-    const fileContents = fs.readFileSync(`${directory}/prime-delete`, 'utf-8')
-    for (let line of fileContents.split('\n')) {
-      if (line.length > 0) {
-        if (line.includes('//')) {
-          line = line.substring(0, line.indexOf('//') - 1)
-        }
-        line = line.trim()
-        const id = packageIdByDigest.get(line)
-        if (id) {
-          await githubPackageRepo.deletePackageVersion(id)
-        }
-      }
-    }
-  }
-}
+// async function deleteDigests(
+//   directory: string,
+//   packageIdByDigest: Map<string, string>,
+//   githubPackageRepo: GithubPackageRepo
+// ): Promise<void> {
+//   if (fs.existsSync(`${directory}/prime-delete`)) {
+//     const fileContents = fs.readFileSync(`${directory}/prime-delete`, 'utf-8')
+//     for (let line of fileContents.split('\n')) {
+//       if (line.length > 0) {
+//         if (line.includes('//')) {
+//           line = line.substring(0, line.indexOf('//') - 1)
+//         }
+//         line = line.trim()
+//         const id = packageIdByDigest.get(line)
+//         if (id) {
+//           await githubPackageRepo.deletePackageVersion(id)
+//         }
+//       }
+//     }
+//   }
+// }
 
 export async function run(): Promise<void> {
   const args = stdio.getopt({
@@ -165,16 +165,16 @@ export async function run(): Promise<void> {
   assertString(args.directory)
   assertString(args.mode)
 
-  let delay = 0
+  // let delay = 0
   if (args.delay) {
     assertString(args.delay)
-    delay = parseInt(args.delay)
+    // delay = parseInt(args.delay)
   }
 
-  //let tag
+  // let tag
   if (args.tag) {
     assertString(args.tag)
-    //tag = args.tag
+    // tag = args.tag
   }
 
   // auto populate
@@ -202,51 +202,52 @@ export async function run(): Promise<void> {
   const githubPackageRepo = new GithubPackageRepo(config)
   await githubPackageRepo.init()
 
-  let packageIdByDigest = new Map<string, string>()
-  let packagesById = new Map<string, any>()
+  const packageIdByDigest = new Map<string, string>()
+  const packagesById = new Map<string, any>()
 
-  const dummyDigest =
-    'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f'
+  // const dummyDigest =
+  //   'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f'
 
   if (args.mode === 'prime') {
-    // push dummy image - repo once it's created and has an iamge it requires atleast one image
-    pushImage(
-      `busybox@${dummyDigest}`, // 1.31
-      `ghcr.io/${config.owner}/${config.package}:dummy`,
-      undefined,
-      args.token
-    )
-    // load after dummy to make sure the package exists on first clone/setup
-    await githubPackageRepo.loadVersions()
+    core.info(`prime mode: owner: ${config.owner}, package: ${config.package}`)
+    // // push dummy image - repo once it's created and has an iamge it requires atleast one image
+    // pushImage(
+    //   `busybox@${dummyDigest}`, // 1.31
+    //   `ghcr.io/${config.owner}/${config.package}:dummy`,
+    //   undefined,
+    //   args.token
+    // )
+    // // load after dummy to make sure the package exists on first clone/setup
+    // await githubPackageRepo.loadVersions()
 
-    // remove all the existing images - except for the dummy image
-    for (const digest of packageIdByDigest.keys()) {
-      if (digest !== dummyDigest) {
-        const id = packageIdByDigest.get(digest)
-        if (id) {
-          await githubPackageRepo.deletePackageVersion(id)
-        }
-      }
-    }
+    // // remove all the existing images - except for the dummy image
+    // for (const digest of packageIdByDigest.keys()) {
+    //   if (digest !== dummyDigest) {
+    //     const id = packageIdByDigest.get(digest)
+    //     if (id) {
+    //       await githubPackageRepo.deletePackageVersion(id)
+    //     }
+    //   }
+    // }
 
-    // prime the test images
-    await loadImages(
-      args.directory,
-      config.owner,
-      config.package,
-      config.token,
-      delay
-    )
+    // // prime the test images
+    // await loadImages(
+    //   args.directory,
+    //   config.owner,
+    //   config.package,
+    //   config.token,
+    //   delay
+    // )
 
-    if (fs.existsSync(`${args.directory}/prime-delete`)) {
-      // reload
-      packageIdByDigest = new Map<string, string>()
-      packagesById = new Map<string, any>()
-      await githubPackageRepo.loadVersions()
+    // if (fs.existsSync(`${args.directory}/prime-delete`)) {
+    //   // reload
+    //   packageIdByDigest = new Map<string, string>()
+    //   packagesById = new Map<string, any>()
+    //   await githubPackageRepo.loadVersions()
 
-      // make any deletions
-      await deleteDigests(args.directory, packageIdByDigest, githubPackageRepo)
-    }
+    //   // make any deletions
+    //   await deleteDigests(args.directory, packageIdByDigest, githubPackageRepo)
+    // }
   } else if (args.mode === 'validate') {
     // test the repo after the test
     await githubPackageRepo.loadVersions()
