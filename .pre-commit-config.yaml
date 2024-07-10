@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: format
+        name: Run formatter.
+        entry: 'npm run format:write'
+        language: system
+        types_or: [ts, json, yaml, markdown]
+        require_serial: true
+      - id: lint
+        name: Run linter.
+        entry: 'npm run lint'
+        language: system
+        types_or: [ts]
+        require_serial: true
