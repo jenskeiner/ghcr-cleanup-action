@@ -1,15 +1,15 @@
 {
   "name": "ghcr-cleanup-action",
-  "description": "GitHub Container Registry Cleanup Action",
-  "version": "1.0.5",
-  "author": "Dataaxiom Inc",
-  "homepage": "https://github.com/dataaxiom/ghcr-cleanup-action",
+  "description": "ghcr.io Container Repository Cleanup Action",
+  "version": "1.0.1",
+  "author": "Jens Keiner",
+  "homepage": "https://github.com/jenskeiner/ghcr-container-repository-cleanup-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dataaxiom/ghcr-cleanup-action.git"
+    "url": "git+https://github.com/jenskeiner/ghcr-container-repository-cleanup-action.git"
   },
   "bugs": {
-    "url": "https://github.com/dataaxiom/ghcr-cleanup-action/issues"
+    "url": "https://github.com/jenskeiner/ghcr-container-repository-cleanup-action/issues"
   },
   "keywords": [
     "ci",
