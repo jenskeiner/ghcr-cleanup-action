@@ -13,3 +13,9 @@ repos:
         language: system
         types_or: [ts]
         require_serial: true
+      - id: bundle
+        name: Transpile TS sources.
+        entry: 'npm run bundle'
+        language: system
+        types_or: [ts]
+        require_serial: true
