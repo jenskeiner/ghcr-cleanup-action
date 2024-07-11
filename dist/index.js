@@ -39808,6 +39808,11 @@ function parseChallenge(challenge) {
     }
     return attributes;
 }
+/**
+ * Checks if a challenge is valid based on the provided attributes.
+ * @param attributes - A map of attribute names and values.
+ * @returns A boolean indicating whether the challenge is valid or not.
+ */
 function isValidChallenge(attributes) {
     let valid = false;
     if (attributes.has('realm') &&

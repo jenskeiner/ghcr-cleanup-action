@@ -31,9 +31,9 @@ export function processWrapper(
 
 /**
  * Pushes a given source image to the given destination.
- * 
+ *
  * Uses skopeo to perform the copy operation.
- * 
+ *
  * @param srcImage The source image in the format `docker://<image-name>`.
  * @param destImage The destination image in the format `docker://<image-name>`.
  * @param extraArgs Additional arguments to pass to the `skopeo` command.
@@ -71,64 +71,66 @@ function pushImage(
   })
 }
 
-async function loadImages(
-  directory: string,
-  owner: string,
-  packageName: string,
-  token: string,
-  delay: number
-): Promise<void> {
-  const primeFilePath = `${directory}/prime`
+// async function loadImages(
+//   directory: string,
+//   owner: string,
+//   packageName: string,
+//   token: string,
+//   delay: number
+// ): Promise<void> {
+//   const primeFilePath = `${directory}/prime`
 
-  if (!fs.existsSync(primeFilePath)) {
-    throw Error(`file: ${primeFilePath} doesn't exist`)
-  }
+//   if (!fs.existsSync(primeFilePath)) {
+//     throw Error(`file: ${primeFilePath} doesn't exist`)
+//   }
 
-  const fileContents = fs.readFileSync(primeFilePath, 'utf-8')
-  for (let line of fileContents.split('\n')) {
-    // Remove comment, maybe, and trim whitespace.
-    const line0 = (line.includes('//') ? line.substring(0, line.indexOf('//')) : line).trim()
+//   const fileContents = fs.readFileSync(primeFilePath, 'utf-8')
+//   for (let line of fileContents.split('\n')) {
+//     // Remove comment, maybe, and trim whitespace.
+//     const line0 = (
+//       line.includes('//') ? line.substring(0, line.indexOf('//')) : line
+//     ).trim()
 
-    // Ignore empty lines.
-    if (line0.length <= 0) continue
+//     // Ignore empty lines.
+//     if (line0.length <= 0) continue
 
-    // Split into parts.
-    const parts = line0.split('|')
+//     // Split into parts.
+//     const parts = line0.split('|')
 
-    // Validate the number of parts.
-    if (parts.length !== 2 && parts.length !== 3) {
-      throw Error(`prime file format error: ${line}`)
-    }
-
-    // The source image repository is the first part.
-    const srcImage = parts[0]
-
-    let tag
-    if (parts[1]) {
-      if (parts[1].includes('@')) {
-        tag = parts[1]
-      } else {
-        tag = `:${parts[1]}`
-      }
-    } else {
-      if (parts[0].includes('@')) {
-        tag = `${parts[0].substring(parts[0].indexOf('@'))}`
-      } else if (parts[0].includes(':')) {
-        tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
-      } else {
-        throw Error(`no tag specified in ${parts[0]}`)
-      }
-    }
-
-//       const destImage = `ghcr.io/${owner}/${packageName}${tag}`
-//       const args = parts.length === 3 ? parts[2] : undefined
-//       pushImage(srcImage, destImage, args, token)
+//     // Validate the number of parts.
+//     if (parts.length !== 2 && parts.length !== 3) {
+//       throw Error(`prime file format error: ${line}`)
 //     }
-//     if (delay > 0) {
-//       // sleep to allow packages to be created in order
-//       await new Promise(f => setTimeout(f, delay))
-  }
-}
+
+//     // The source image repository is the first part.
+//     const srcImage = parts[0]
+
+//     let tag
+//     if (parts[1]) {
+//       if (parts[1].includes('@')) {
+//         tag = parts[1]
+//       } else {
+//         tag = `:${parts[1]}`
+//       }
+//     } else {
+//       if (parts[0].includes('@')) {
+//         tag = `${parts[0].substring(parts[0].indexOf('@'))}`
+//       } else if (parts[0].includes(':')) {
+//         tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
+//       } else {
+//         throw Error(`no tag specified in ${parts[0]}`)
+//       }
+//     }
+
+//     //       const destImage = `ghcr.io/${owner}/${packageName}${tag}`
+//     //       const args = parts.length === 3 ? parts[2] : undefined
+//     //       pushImage(srcImage, destImage, args, token)
+//     //     }
+//     //     if (delay > 0) {
+//     //       // sleep to allow packages to be created in order
+//     //       await new Promise(f => setTimeout(f, delay))
+//   }
+// }
 
 // async function deleteDigests(
 //   directory: string,
@@ -228,14 +230,17 @@ export async function run(): Promise<void> {
   const packagesById = new Map<string, any>()
 
   // Digest of busybox image to be used as dummy image. Corresponds to busybox:1.31.
-  const dummyDigest = 'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f'
+  const dummyDigest =
+    'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f'
 
   if (args.mode === 'prime') {
     // Prime the container image repository with the given images and tags.
-    core.info(`Priming the container image repository ghcr.io/${config.owner}/${config.package}.`)
+    core.info(
+      `Priming the container image repository ghcr.io/${config.owner}/${config.package}.`
+    )
 
     // Push dummy image to ensure that the container image repository exists and contains at least one version.
-    // Once the repository has been created, it must contain at least one version, i.e. trying to delete the 
+    // Once the repository has been created, it must contain at least one version, i.e. trying to delete the
     // last version will fail. To that end, the dummy image is always kept in the repository but is ignored for
     // the actual tests.
     pushImage(
@@ -255,7 +260,7 @@ export async function run(): Promise<void> {
       }
     }
 
-    // Push th images from the prime file.
+    // // Push th images from the prime file.
     // await loadImages(
     //   args.directory,
     //   config.owner,

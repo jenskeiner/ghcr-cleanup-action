@@ -34607,31 +34607,39 @@ function processWrapper(command, args, options) {
         throw new Error(`running command:  + ${command}, status: ${output.status}`);
     }
 }
-// function pushImage(
-//   srcImage: string,
-//   destImage: string,
-//   extraArgs: string | undefined,
-//   token: string
-// ): void {
-//   console.log(`copying image: ${srcImage} ${destImage}`)
-//   const args = [
-//     'copy',
-//     `docker://${srcImage}`,
-//     `docker://${destImage}`,
-//     `--dest-creds=token:${token}`
-//   ]
-//   if (extraArgs) {
-//     const parts = extraArgs.split(' ')
-//     for (const part of parts) {
-//       args.push(part.trim())
-//     }
-//   }
-//   processWrapper('skopeo', args, {
-//     encoding: 'utf-8',
-//     shell: false,
-//     stdio: 'inherit'
-//   })
-// }
+/**
+ * Pushes a given source image to the given destination.
+ *
+ * Uses skopeo to perform the copy operation.
+ *
+ * @param srcImage The source image in the format `docker://<image-name>`.
+ * @param destImage The destination image in the format `docker://<image-name>`.
+ * @param extraArgs Additional arguments to pass to the `skopeo` command.
+ * @param token The authentication token for the destination registry.
+ */
+function pushImage(srcImage, destImage, extraArgs, token) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`Copying image ${srcImage} to ${destImage}.`);
+    // Set up the arguments for the skopeo command.
+    const args = [
+        'copy',
+        `docker://${srcImage}`,
+        `docker://${destImage}`,
+        `--dest-creds=token:${token}`
+    ];
+    // Add any additional arguments.
+    if (extraArgs) {
+        const parts = extraArgs.split(' ');
+        for (const part of parts) {
+            args.push(part.trim());
+        }
+    }
+    // Run the skopeo command.
+    processWrapper('skopeo', args, {
+        encoding: 'utf-8',
+        shell: false,
+        stdio: 'inherit'
+    });
+}
 // async function loadImages(
 //   directory: string,
 //   owner: string,
@@ -34639,47 +34647,49 @@ function processWrapper(command, args, options) {
 //   token: string,
 //   delay: number
 // ): Promise<void> {
-//   if (!fs.existsSync(`${directory}/prime`)) {
-//     throw Error(`file: ${directory}/prime doesn't exist`)
+//   const primeFilePath = `${directory}/prime`
+//   if (!fs.existsSync(primeFilePath)) {
+//     throw Error(`file: ${primeFilePath} doesn't exist`)
 //   }
-//   const fileContents = fs.readFileSync(`${directory}/prime`, 'utf-8')
+//   const fileContents = fs.readFileSync(primeFilePath, 'utf-8')
 //   for (let line of fileContents.split('\n')) {
-//     const original = line
-//     if (line.length > 0) {
-//       if (line.includes('//')) {
-//         line = line.substring(0, line.indexOf('//'))
-//       }
-//       line = line.trim()
-//       // split into parts
-//       const parts = line.split('|')
-//       if (parts.length !== 2 && parts.length !== 3) {
-//         throw Error(`prime file format error: ${original}`)
-//       }
-//       const srcImage = parts[0]
-//       let tag
-//       if (parts[1]) {
-//         if (parts[1].includes('@')) {
-//           tag = parts[1]
-//         } else {
-//           tag = `:${parts[1]}`
-//         }
+//     // Remove comment, maybe, and trim whitespace.
+//     const line0 = (
+//       line.includes('//') ? line.substring(0, line.indexOf('//')) : line
+//     ).trim()
+//     // Ignore empty lines.
+//     if (line0.length <= 0) continue
+//     // Split into parts.
+//     const parts = line0.split('|')
+//     // Validate the number of parts.
+//     if (parts.length !== 2 && parts.length !== 3) {
+//       throw Error(`prime file format error: ${line}`)
+//     }
+//     // The source image repository is the first part.
+//     const srcImage = parts[0]
+//     let tag
+//     if (parts[1]) {
+//       if (parts[1].includes('@')) {
+//         tag = parts[1]
 //       } else {
-//         if (parts[0].includes('@')) {
-//           tag = `${parts[0].substring(parts[0].indexOf('@'))}`
-//         } else if (parts[0].includes(':')) {
-//           tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
-//         } else {
-//           throw Error(`no tag specified in ${parts[0]}`)
-//         }
+//         tag = `:${parts[1]}`
 //       }
-//       const destImage = `ghcr.io/${owner}/${packageName}${tag}`
-//       const args = parts.length === 3 ? parts[2] : undefined
-//       pushImage(srcImage, destImage, args, token)
+//     } else {
+//       if (parts[0].includes('@')) {
+//         tag = `${parts[0].substring(parts[0].indexOf('@'))}`
+//       } else if (parts[0].includes(':')) {
+//         tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
+//       } else {
+//         throw Error(`no tag specified in ${parts[0]}`)
+//       }
 //     }
-//     if (delay > 0) {
-//       // sleep to allow packages to be created in order
-//       await new Promise(f => setTimeout(f, delay))
-//     }
+//     //       const destImage = `ghcr.io/${owner}/${packageName}${tag}`
+//     //       const args = parts.length === 3 ? parts[2] : undefined
+//     //       pushImage(srcImage, destImage, args, token)
+//     //     }
+//     //     if (delay > 0) {
+//     //       // sleep to allow packages to be created in order
+//     //       await new Promise(f => setTimeout(f, delay))
 //   }
 // }
 // async function deleteDigests(
@@ -34766,29 +34776,25 @@ async function run() {
     await githubPackageRepo.init();
     const packageIdByDigest = new Map();
     const packagesById = new Map();
-    // const dummyDigest =
-    //   'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f'
+    // Digest of busybox image to be used as dummy image. Corresponds to busybox:1.31.
+    const dummyDigest = 'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f';
     if (args.mode === 'prime') {
-        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`prime mode: owner: ${config.owner}, package: ${config.package}`);
-        // // push dummy image - repo once it's created and has an iamge it requires atleast one image
-        // pushImage(
-        //   `busybox@${dummyDigest}`, // 1.31
-        //   `ghcr.io/${config.owner}/${config.package}:dummy`,
-        //   undefined,
-        //   args.token
-        // )
-        // // load after dummy to make sure the package exists on first clone/setup
-        // await githubPackageRepo.loadVersions()
-        // // remove all the existing images - except for the dummy image
-        // for (const digest of packageIdByDigest.keys()) {
-        //   if (digest !== dummyDigest) {
-        //     const id = packageIdByDigest.get(digest)
-        //     if (id) {
-        //       await githubPackageRepo.deletePackageVersion(id)
-        //     }
-        //   }
-        // }
-        // // prime the test images
+        // Prime the container image repository with the given images and tags.
+        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`Priming the container image repository ghcr.io/${config.owner}/${config.package}.`);
+        // Push dummy image to ensure that the container image repository exists and contains at least one version.
+        // Once the repository has been created, it must contain at least one version, i.e. trying to delete the
+        // last version will fail. To that end, the dummy image is always kept in the repository but is ignored for
+        // the actual tests.
+        pushImage(`busybox@${dummyDigest}`, `ghcr.io/${config.owner}/${config.package}:dummy`, undefined, args.token);
+        // Load all versions.
+        await githubPackageRepo.loadVersions();
+        // Remove all existing images, except for the dummy image.
+        for (const version of githubPackageRepo.getVersions()) {
+            if (version.name !== dummyDigest) {
+                await githubPackageRepo.deletePackageVersion(version.id);
+            }
+        }
+        // // Push th images from the prime file.
         // await loadImages(
         //   args.directory,
         //   config.owner,

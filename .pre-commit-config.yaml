@@ -13,9 +13,17 @@ repos:
         language: system
         types_or: [ts]
         require_serial: true
-      - id: bundle
-        name: Transpile TS sources.
-        entry: 'npm run bundle'
+      - id: bundle_action
+        name: Transpile action TS sources.
+        entry: 'npm run package'
+        pass_filenames: false
+        language: system
+        types_or: [ts]
+        require_serial: true
+      - id: bundle_ci_tester
+        name: Transpile CI Tester TS sources.
+        entry: 'npm run ci-tester'
+        pass_filenames: false
         language: system
         types_or: [ts]
         require_serial: true
