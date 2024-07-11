@@ -34640,58 +34640,53 @@ function pushImage(srcImage, destImage, extraArgs, token) {
         stdio: 'inherit'
     });
 }
-// async function loadImages(
-//   directory: string,
-//   owner: string,
-//   packageName: string,
-//   token: string,
-//   delay: number
-// ): Promise<void> {
-//   const primeFilePath = `${directory}/prime`
-//   if (!fs.existsSync(primeFilePath)) {
-//     throw Error(`file: ${primeFilePath} doesn't exist`)
-//   }
-//   const fileContents = fs.readFileSync(primeFilePath, 'utf-8')
-//   for (let line of fileContents.split('\n')) {
-//     // Remove comment, maybe, and trim whitespace.
-//     const line0 = (
-//       line.includes('//') ? line.substring(0, line.indexOf('//')) : line
-//     ).trim()
-//     // Ignore empty lines.
-//     if (line0.length <= 0) continue
-//     // Split into parts.
-//     const parts = line0.split('|')
-//     // Validate the number of parts.
-//     if (parts.length !== 2 && parts.length !== 3) {
-//       throw Error(`prime file format error: ${line}`)
-//     }
-//     // The source image repository is the first part.
-//     const srcImage = parts[0]
-//     let tag
-//     if (parts[1]) {
-//       if (parts[1].includes('@')) {
-//         tag = parts[1]
-//       } else {
-//         tag = `:${parts[1]}`
-//       }
-//     } else {
-//       if (parts[0].includes('@')) {
-//         tag = `${parts[0].substring(parts[0].indexOf('@'))}`
-//       } else if (parts[0].includes(':')) {
-//         tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
-//       } else {
-//         throw Error(`no tag specified in ${parts[0]}`)
-//       }
-//     }
-//     //       const destImage = `ghcr.io/${owner}/${packageName}${tag}`
-//     //       const args = parts.length === 3 ? parts[2] : undefined
-//     //       pushImage(srcImage, destImage, args, token)
-//     //     }
-//     //     if (delay > 0) {
-//     //       // sleep to allow packages to be created in order
-//     //       await new Promise(f => setTimeout(f, delay))
-//   }
-// }
+async function loadImages(directory, owner, packageName, token, delay) {
+    const primeFilePath = `${directory}/prime`;
+    if (!fs__WEBPACK_IMPORTED_MODULE_1___default().existsSync(primeFilePath)) {
+        throw Error(`file: ${primeFilePath} doesn't exist`);
+    }
+    const fileContents = fs__WEBPACK_IMPORTED_MODULE_1___default().readFileSync(primeFilePath, 'utf-8');
+    for (const line of fileContents.split('\n')) {
+        // Remove comment, maybe, and trim whitespace.
+        const line0 = (line.includes('//') ? line.substring(0, line.indexOf('//')) : line).trim();
+        // Ignore empty lines.
+        if (line0.length <= 0)
+            continue;
+        // Split into parts.
+        const parts = line0.split('|');
+        // Validate the number of parts.
+        if (parts.length !== 2 && parts.length !== 3) {
+            throw Error(`prime file format error: ${line}`);
+        }
+        // The source image repository is the first part.
+        const srcImage = parts[0];
+        let tag;
+        if (parts[1]) {
+            if (parts[1].includes('@')) {
+                tag = parts[1];
+            }
+            else {
+                tag = `:${parts[1]}`;
+            }
+        }
+        else if (parts[0].includes('@')) {
+            tag = `${parts[0].substring(parts[0].indexOf('@'))}`;
+        }
+        else if (parts[0].includes(':')) {
+            tag = `:${parts[0].substring(parts[0].indexOf(':'))}`;
+        }
+        else {
+            throw Error(`no tag specified in ${parts[0]}`);
+        }
+        const destImage = `ghcr.io/${owner}/${packageName}${tag}`;
+        const args = parts.length === 3 ? parts[2] : undefined;
+        pushImage(srcImage, destImage, args, token);
+    }
+    if (delay > 0) {
+        // sleep to allow packages to be created in order
+        await new Promise(f => setTimeout(f, delay));
+    }
+}
 // async function deleteDigests(
 //   directory: string,
 //   packageIdByDigest: Map<string, string>,
@@ -34743,10 +34738,10 @@ async function run() {
     }
     assertString(args.directory);
     assertString(args.mode);
-    // let delay = 0
+    let delay = 0;
     if (args.delay) {
         assertString(args.delay);
-        // delay = parseInt(args.delay)
+        delay = parseInt(args.delay);
     }
     // let tag
     if (args.tag) {
@@ -34794,14 +34789,8 @@ async function run() {
                 await githubPackageRepo.deletePackageVersion(version.id);
             }
         }
-        // // Push th images from the prime file.
-        // await loadImages(
-        //   args.directory,
-        //   config.owner,
-        //   config.package,
-        //   config.token,
-        //   delay
-        // )
+        // Push th images from the prime file.
+        await loadImages(args.directory, config.owner, config.package, config.token, delay);
         // if (fs.existsSync(`${args.directory}/prime-delete`)) {
         //   // reload
         //   packageIdByDigest = new Map<string, string>()
