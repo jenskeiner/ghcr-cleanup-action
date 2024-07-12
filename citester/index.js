@@ -34706,13 +34706,13 @@ async function deleteImages(filePath, repo) {
         // Skip empty lines.
         if (line0.length <= 0)
             continue;
-        const version = repo.getVersionForDigest(line);
+        const version = repo.getVersionForDigest(line0);
         if (version) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`Deleting package version: id = ${version.id}, digest = ${line}`);
+            _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`Deleting package version: id = ${version.id}, digest = ${line0}`);
             await repo.deletePackageVersion(version.id);
         }
         else {
-            throw Error(`Unable to delete image with digest = ${line} as it was not found in the repository.`);
+            throw Error(`Unable to delete image with digest = ${line0} as it was not found in the repository.`);
         }
     }
 }
