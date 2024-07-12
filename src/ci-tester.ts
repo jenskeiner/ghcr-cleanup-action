@@ -116,7 +116,7 @@ async function copyImages(
       tag = `${parts[0].substring(parts[0].indexOf('@'))}`
     } else if (parts[0].includes(':')) {
       core.info('3')
-      tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
+      tag = `${parts[0].substring(parts[0].indexOf(':'))}`
     } else {
       throw Error(`no tag specified in ${parts[0]}`)
     }

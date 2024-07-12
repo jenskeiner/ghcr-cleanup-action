@@ -34674,7 +34674,7 @@ async function copyImages(filePath, owner, packageName, token, delay) {
         }
         else if (parts[0].includes(':')) {
             _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('3');
-            tag = `:${parts[0].substring(parts[0].indexOf(':'))}`;
+            tag = `${parts[0].substring(parts[0].indexOf(':'))}`;
         }
         else {
             throw Error(`no tag specified in ${parts[0]}`);
