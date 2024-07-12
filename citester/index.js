@@ -34795,7 +34795,7 @@ async function run() {
         if (fs__WEBPACK_IMPORTED_MODULE_1___default().existsSync(primeFilePath)) {
             _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`Found prime file at ${primeFilePath}. Pushing images in file.`);
             // Push the images from the prime file.
-            await copyImages(args.directory, config.owner, config.package, config.token, delay);
+            await copyImages(primeFilePath, config.owner, config.package, config.token, delay);
         }
         else {
             // No prime file. This is an error because for testing the action, we need to copy some images into the reppository first.

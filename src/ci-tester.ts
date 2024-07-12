@@ -278,7 +278,7 @@ export async function run(): Promise<void> {
 
       // Push the images from the prime file.
       await copyImages(
-        args.directory,
+        primeFilePath,
         config.owner,
         config.package,
         config.token,
