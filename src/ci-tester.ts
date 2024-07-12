@@ -39,7 +39,7 @@ export function processWrapper(
  * @param extraArgs Additional arguments to pass to the `skopeo` command.
  * @param token The authentication token for the destination registry.
  */
-function pushImage(
+function copyImage(
   srcImage: string,
   destImage: string,
   extraArgs: string | undefined,
@@ -71,20 +71,15 @@ function pushImage(
   })
 }
 
-async function loadImages(
-  directory: string,
+async function copyImages(
+  filePath: string,
   owner: string,
   packageName: string,
   token: string,
   delay: number
 ): Promise<void> {
-  const primeFilePath = `${directory}/prime`
+  const fileContents = fs.readFileSync(filePath, 'utf-8')
 
-  if (!fs.existsSync(primeFilePath)) {
-    throw Error(`file: ${primeFilePath} doesn't exist`)
-  }
-
-  const fileContents = fs.readFileSync(primeFilePath, 'utf-8')
   for (const line of fileContents.split('\n')) {
     // Remove comment, maybe, and trim whitespace.
     const line0 = (
@@ -122,7 +117,7 @@ async function loadImages(
 
     const destImage = `ghcr.io/${owner}/${packageName}${tag}`
     const args = parts.length === 3 ? parts[2] : undefined
-    pushImage(srcImage, destImage, args, token)
+    copyImage(srcImage, destImage, args, token)
   }
 
   if (delay > 0) {
@@ -131,27 +126,43 @@ async function loadImages(
   }
 }
 
-// async function deleteDigests(
-//   directory: string,
-//   packageIdByDigest: Map<string, string>,
-//   githubPackageRepo: GithubPackageRepo
-// ): Promise<void> {
-//   if (fs.existsSync(`${directory}/prime-delete`)) {
-//     const fileContents = fs.readFileSync(`${directory}/prime-delete`, 'utf-8')
-//     for (let line of fileContents.split('\n')) {
-//       if (line.length > 0) {
-//         if (line.includes('//')) {
-//           line = line.substring(0, line.indexOf('//') - 1)
-//         }
-//         line = line.trim()
-//         const id = packageIdByDigest.get(line)
-//         if (id) {
-//           await githubPackageRepo.deletePackageVersion(id)
-//         }
-//       }
-//     }
-//   }
-// }
+/**
+ * Deletes package versions based on the digests specified in a file.
+ *
+ * @param directory The directory where the file is located.
+ * @param packageIdByDigest A map that stores the package ID by digest.
+ * @param repo The instance of the GithubPackageRepo class.
+ */
+async function deleteImages(
+  filePath: string,
+  repo: GithubPackageRepo
+): Promise<void> {
+  // Read file contents.
+  const fileContents = fs.readFileSync(filePath, 'utf-8')
+
+  for (const line of fileContents.split('\n')) {
+    // Remove comment, maybe, and trim whitespace.
+    const line0 = (
+      line.includes('//') ? line.substring(0, line.indexOf('//')) : line
+    ).trim()
+
+    // Skip empty lines.
+    if (line0.length <= 0) continue
+
+    const version = repo.getVersionForDigest(line)
+
+    if (version) {
+      core.info(
+        `Deleting package version: id = ${version.id}, digest = ${line}`
+      )
+      await repo.deletePackageVersion(version.id)
+    } else {
+      throw Error(
+        `Unable to delete image with digest = ${line} as it was not found in the repository.`
+      )
+    }
+  }
+}
 
 export async function run(): Promise<void> {
   const args = stdio.getopt({
@@ -242,7 +253,7 @@ export async function run(): Promise<void> {
     // Once the repository has been created, it must contain at least one version, i.e. trying to delete the
     // last version will fail. To that end, the dummy image is always kept in the repository but is ignored for
     // the actual tests.
-    pushImage(
+    copyImage(
       `busybox@${dummyDigest}`,
       `ghcr.io/${config.owner}/${config.package}:dummy`,
       undefined,
@@ -259,24 +270,45 @@ export async function run(): Promise<void> {
       }
     }
 
-    // Push th images from the prime file.
-    await loadImages(
-      args.directory,
-      config.owner,
-      config.package,
-      config.token,
-      delay
-    )
+    // Path to prime file. Contains the images to copy into the repository.
+    const primeFilePath = `${args.directory}/prime`
 
-    // if (fs.existsSync(`${args.directory}/prime-delete`)) {
-    //   // reload
-    //   packageIdByDigest = new Map<string, string>()
-    //   packagesById = new Map<string, any>()
-    //   await githubPackageRepo.loadVersions()
+    if (fs.existsSync(primeFilePath)) {
+      core.info(`Found prime file at ${primeFilePath}. Pushing images in file.`)
 
-    //   // make any deletions
-    //   await deleteDigests(args.directory, packageIdByDigest, githubPackageRepo)
-    // }
+      // Push the images from the prime file.
+      await copyImages(
+        args.directory,
+        config.owner,
+        config.package,
+        config.token,
+        delay
+      )
+    } else {
+      // No prime file. This is an error because for testing the action, we need to copy some images into the reppository first.
+      throw Error(`No prime file found at ${primeFilePath}.`)
+    }
+
+    // Path to prime-delete file. Contains the digests of images to delete from the repository after images have been copied.
+    // Can be used to delete select images again that were initially copied recursively because they were referenced from the
+    // prime images.
+    const primeDeleteFilePath = `${args.directory}/prime-delete`
+
+    if (fs.existsSync(primeDeleteFilePath)) {
+      core.info(
+        `Found prime-delete file at ${primeDeleteFilePath}. Deleting images in file.`
+      )
+
+      // Reload all versions.
+      await githubPackageRepo.loadVersions()
+
+      // Delete the images from the prime delete file.
+      await deleteImages(primeDeleteFilePath, githubPackageRepo)
+    } else {
+      console.info(
+        `No prime-delete file found at ${primeDeleteFilePath}. Skipping.`
+      )
+    }
   } else if (args.mode === 'validate') {
     // test the repo after the test
     await githubPackageRepo.loadVersions()
