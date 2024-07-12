@@ -1,2 +1,2 @@
-busybox:uclibc-1.32||--all // multi-arch image and dependents from tag 
-busybox:uclibc-1.33||--all // multi-arch image and dependents from tag
+busybox@sha256:e52f46953af8eb2c29046b8feb3fe56f3091eb63a005aade2ad4ffb712214d62|uclibc-1.32|--all // multi-arch image, not available via tag anymore
+busybox@sha256:9d30bbb8a8d53ea5ae31ed4c61e496efa7f9e1e2d18fe2822078627c5a1d7b6c|uclibc-1.33|--all // multi-arch image, not available via tag anymore
