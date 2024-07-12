@@ -34656,25 +34656,32 @@ async function copyImages(filePath, owner, packageName, token, delay) {
         }
         // The source image repository is the first part.
         const srcImage = parts[0];
+        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`parts = ${parts}`);
         let tag;
         if (parts[1]) {
             if (parts[1].includes('@')) {
+                _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('1a');
                 tag = parts[1];
             }
             else {
+                _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('1b');
                 tag = `:${parts[1]}`;
             }
         }
         else if (parts[0].includes('@')) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('2');
             tag = `${parts[0].substring(parts[0].indexOf('@'))}`;
         }
         else if (parts[0].includes(':')) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('3');
             tag = `:${parts[0].substring(parts[0].indexOf(':'))}`;
         }
         else {
             throw Error(`no tag specified in ${parts[0]}`);
         }
         const destImage = `ghcr.io/${owner}/${packageName}${tag}`;
+        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`srcImage = ${srcImage}`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`destImage = ${destImage}`);
         const args = parts.length === 3 ? parts[2] : undefined;
         copyImage(srcImage, destImage, args, token);
     }

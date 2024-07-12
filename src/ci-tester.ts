@@ -100,22 +100,31 @@ async function copyImages(
     // The source image repository is the first part.
     const srcImage = parts[0]
 
+    core.info(`parts = ${parts}`)
+
     let tag
     if (parts[1]) {
       if (parts[1].includes('@')) {
+        core.info('1a')
         tag = parts[1]
       } else {
+        core.info('1b')
         tag = `:${parts[1]}`
       }
     } else if (parts[0].includes('@')) {
+      core.info('2')
       tag = `${parts[0].substring(parts[0].indexOf('@'))}`
     } else if (parts[0].includes(':')) {
+      core.info('3')
       tag = `:${parts[0].substring(parts[0].indexOf(':'))}`
     } else {
       throw Error(`no tag specified in ${parts[0]}`)
     }
 
     const destImage = `ghcr.io/${owner}/${packageName}${tag}`
+
+    core.info(`srcImage = ${srcImage}`)
+    core.info(`destImage = ${destImage}`)
     const args = parts.length === 3 ? parts[2] : undefined
     copyImage(srcImage, destImage, args, token)
   }
