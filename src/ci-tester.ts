@@ -311,6 +311,10 @@ export async function run(): Promise<void> {
       // Reload all versions.
       await githubPackageRepo.loadVersions()
 
+      for (const version of githubPackageRepo.getVersions()) {
+        core.info(`id = ${version.id}, digest = ${version.name}`)
+      }
+
       // Delete the images from the prime delete file.
       await deleteImages(primeDeleteFilePath, githubPackageRepo)
     } else {

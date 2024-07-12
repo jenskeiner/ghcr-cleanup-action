@@ -34816,6 +34816,9 @@ async function run() {
             _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`Found prime-delete file at ${primeDeleteFilePath}. Deleting images in file.`);
             // Reload all versions.
             await githubPackageRepo.loadVersions();
+            for (const version of githubPackageRepo.getVersions()) {
+                _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`id = ${version.id}, digest = ${version.name}`);
+            }
             // Delete the images from the prime delete file.
             await deleteImages(primeDeleteFilePath, githubPackageRepo);
         }
