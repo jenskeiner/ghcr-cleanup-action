@@ -191,21 +191,21 @@ jobs:
             --directory tests/${{ matrix.tests.folder }} \
             --mode prime --delay ${{ env.DELAY }}
 
-      # - name: ' > Running Workflow'
-      #   uses: ./
-      #   with:
-      #     tags: ${{ env.TAGS }}
-      #     keep-n-tagged: ${{ env.KEEP_N_TAGGED }}
-      #     keep-n-untagged: ${{ env.KEEP_N_UNTAGGED }}
-      #     exclude-tags: ${{ env.EXCLUDE_TAGS }}
-      #     dry-run: ${{ env.DRY_RUN }}
-      #     token: ${{ secrets.GITHUB_TOKEN }}
+      - name: ' > Running Workflow'
+        uses: ./
+        with:
+          include-tags: ${{ env.TAGS }}
+          exclude-tags: ${{ env.EXCLUDE_TAGS }}
+          keep-n-tagged: ${{ env.KEEP_N_TAGGED }}
+          keep-n-untagged: ${{ env.KEEP_N_UNTAGGED }}
+          dry-run: ${{ env.DRY_RUN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: ' > Validating Outcome'
-      #   run: |
-      #     node citester/index.js --token ${{ secrets.GITHUB_TOKEN }} \
-      #       --directory tests/${{ matrix.tests.folder }} \
-      #       --mode validate
+      - name: ' > Validating Outcome'
+        run: |
+          node citester/index.js --token ${{ secrets.GITHUB_TOKEN }} \
+            --directory tests/${{ matrix.tests.folder }} \
+            --mode validate
 
   # attestation-tests:
   #   name: Attestation Tests
