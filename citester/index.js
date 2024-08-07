@@ -34650,40 +34650,40 @@ async function copyImages(filePath, owner, packageName, token, delay) {
             continue;
         // Split into parts.
         const parts = line0.split('|');
+        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`parts = ${parts}`);
         // Validate the number of parts.
         if (parts.length !== 2 && parts.length !== 3) {
             throw Error(`prime file format error: ${line}`);
         }
         // The source image repository is the first part.
         const srcImage = parts[0];
-        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`parts = ${parts}`);
-        let tag;
+        // Determine the tags to use in the target repository.
+        let tags = [];
         if (parts[1]) {
-            if (parts[1].includes('@')) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('1a');
-                tag = parts[1];
-            }
-            else {
-                _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('1b');
-                tag = `:${parts[1]}`;
-            }
+            // The tags are explicitly given in the second part, separated by commas.
+            tags = parts[1].split(',').map(tag => tag.trim());
         }
         else if (parts[0].includes('@')) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('2');
-            tag = `${parts[0].substring(parts[0].indexOf('@'))}`;
+            // No tag specified, use the source image digest, so the copied image will be untagged.
+            tags = [parts[0].substring(parts[0].indexOf('@'))];
         }
         else if (parts[0].includes(':')) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_2__.info('3');
-            tag = `${parts[0].substring(parts[0].indexOf(':'))}`;
+            // No tag specified, use the the source image tag.
+            tags = [parts[0].substring(parts[0].indexOf(':'))];
         }
         else {
-            throw Error(`no tag specified in ${parts[0]}`);
+            // Incorrect format.
+            throw Error(`Unable to determine target image tag or digest`);
         }
-        const destImage = `ghcr.io/${owner}/${packageName}${tag}`;
+        // The full destination image name.
+        const destImages = tags.map(tag => `ghcr.io/${owner}/${packageName}${tag}`);
         _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`srcImage = ${srcImage}`);
-        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`destImage = ${destImage}`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_2__.info(`destImages = ${destImages}`);
+        // Additional arguments to pass to the skopeo command, maybe.
         const args = parts.length === 3 ? parts[2] : undefined;
-        copyImage(srcImage, destImage, args, token);
+        for (const destImage of destImages) {
+            copyImage(srcImage, destImage, args, token);
+        }
     }
     if (delay > 0) {
         // sleep to allow packages to be created in order
@@ -34777,7 +34777,6 @@ async function run() {
     await registry.login();
     const githubPackageRepo = new _github_package_js__WEBPACK_IMPORTED_MODULE_6__/* .GithubPackageRepo */ .l(config);
     await githubPackageRepo.init();
-    const packageIdByDigest = new Map();
     const packagesById = new Map();
     // Digest of busybox image to be used as dummy image. Corresponds to busybox:1.31.
     const dummyDigest = 'sha256:1a41828fc1a347d7061f7089d6f0c94e5a056a3c674714712a1481a4a33eb56f';
@@ -34830,38 +34829,45 @@ async function run() {
         // test the repo after the test
         await githubPackageRepo.loadVersions();
         let error = false;
-        // load the expected digests
+        // Load expected digests.
         if (!fs__WEBPACK_IMPORTED_MODULE_1___default().existsSync(`${args.directory}/expected-digests`)) {
             _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`file: ${args.directory}/expected-digests doesn't exist`);
             error = true;
         }
         else {
-            const digests = new Set();
+            const digests_expected = new Set();
             const fileContents = fs__WEBPACK_IMPORTED_MODULE_1___default().readFileSync(`${args.directory}/expected-digests`, 'utf-8');
-            for (let line of fileContents.split('\n')) {
-                if (line.length > 0) {
-                    if (line.includes('//')) {
-                        line = line.substring(0, line.indexOf('//') - 1);
-                    }
-                    line = line.trim();
-                    digests.add(line);
+            for (const line of fileContents.split('\n')) {
+                // Remove comment, maybe, and trim whitespace.
+                const line0 = (line.includes('//') ? line.substring(0, line.indexOf('//')) : line).trim();
+                // Ignore empty lines.
+                if (line0.length <= 0)
+                    continue;
+                digests_expected.add(line0);
+            }
+            const digests = new Set();
+            for (const version of githubPackageRepo.getVersions()) {
+                digests.add(version.name);
+            }
+            for (const digest of digests_expected) {
+                if (digests.has(digest)) {
+                    // Found expected digest.
+                    // Delete it from the set already since it is irrelevant when checking for unexpected digests in the next loop below.
+                    digests.delete(digest);
+                }
+                else {
+                    // Could not find expected digest.
+                    error = true;
+                    _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`Expected digest not found after test: ${digest}`);
                 }
             }
             for (const digest of digests) {
-                if (packageIdByDigest.has(digest)) {
-                    packageIdByDigest.delete(digest);
-                }
-                else {
-                    error = true;
-                    _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`expected digest not found after test: ${digest}`);
-                }
-            }
-            for (const digest of packageIdByDigest.keys()) {
+                // Found digest that was not expected.
                 error = true;
-                _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`extra digest found after test: ${digest}`);
+                _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`Found unexpected digest after test: ${digest}`);
             }
         }
-        // load the expected tags
+        // Load expected tags.
         if (!fs__WEBPACK_IMPORTED_MODULE_1___default().existsSync(`${args.directory}/expected-tags`)) {
             _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`file: ${args.directory}/expected-tags doesn't exist`);
             error = true;
@@ -34869,28 +34875,35 @@ async function run() {
         else {
             const expectedTags = new Set();
             const fileContents = fs__WEBPACK_IMPORTED_MODULE_1___default().readFileSync(`${args.directory}/expected-tags`, 'utf-8');
-            for (let line of fileContents.split('\n')) {
-                if (line.length > 0) {
-                    if (line.includes('//')) {
-                        line = line.substring(0, line.indexOf('//'));
-                    }
-                    line = line.trim();
-                    expectedTags.add(line);
+            for (const line of fileContents.split('\n')) {
+                // Remove comment, maybe, and trim whitespace.
+                const line0 = (line.includes('//') ? line.substring(0, line.indexOf('//')) : line).trim();
+                // Ignore empty lines.
+                if (line0.length <= 0)
+                    continue;
+                expectedTags.add(line);
+            }
+            const tags = new Set();
+            for (const tag of githubPackageRepo.getTags()) {
+                tags.add(tag);
+            }
+            for (const tag of expectedTags) {
+                if (tags.has(tag)) {
+                    // Found expected tag.
+                    // Delete it from the set already since it is irrelevant when checking for unexpected digests in the next loop below.
+                    tags.delete(tag);
+                }
+                else {
+                    // Could not find expected tag.
+                    error = true;
+                    _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`Expected tag not found after test: ${tag}`);
                 }
             }
-            // const regTags = new Set(await registry.getTags())
-            // for (const expectedTag of expectedTags) {
-            //   if (regTags.has(expectedTag)) {
-            //     regTags.delete(expectedTag)
-            //   } else {
-            //     error = true
-            //     core.setFailed(`expected tag ${expectedTag} not found after test`)
-            //   }
-            // }
-            // for (const regTag of regTags) {
-            //   error = true
-            //   core.setFailed(`extra tag found after test: ${regTag}`)
-            // }
+            for (const tag of tags) {
+                // Found tag that was not expected.
+                error = true;
+                _actions_core__WEBPACK_IMPORTED_MODULE_2__.setFailed(`Found unexpected tag after test: ${tag}`);
+            }
         }
         if (!error)
             console.info('test passed!');
