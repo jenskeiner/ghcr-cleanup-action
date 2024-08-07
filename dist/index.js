@@ -40289,7 +40289,9 @@ class CleanupAction {
         // Add the cgiven digest to the result, since it points to an existing manifest.
         result.push(digest);
         // Check the media type of the manifest.
-        if (manifest.mediaType === 'application/vnd.oci.image.index.v1+json') {
+        if (manifest.mediaType === 'application/vnd.oci.image.index.v1+json' ||
+            manifest.mediaType ===
+                'application/vnd.docker.distribution.manifest.list.v2+json') {
             // Manifest list, i.e. a multi-architecture image pointing to multiple child manifests.
             core.info(`- ${digest}: manifest list`);
             // Recursively get all reachable versions for each child manifest.
@@ -40305,7 +40307,9 @@ class CleanupAction {
                 }
             }
         }
-        else if (manifest.mediaType === 'application/vnd.oci.image.manifest.v1+json') {
+        else if (manifest.mediaType === 'application/vnd.oci.image.manifest.v1+json' ||
+            manifest.mediaType ===
+                'application/vnd.docker.distribution.manifest.v2+json') {
             // Image manifest. Can be a single-architecture image or an attestation.
             if (manifest.layers.length === 1 &&
                 manifest.layers[0].mediaType === 'application/vnd.in-toto+json') {
