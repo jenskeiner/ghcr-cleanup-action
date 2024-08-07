@@ -34661,7 +34661,7 @@ async function copyImages(filePath, owner, packageName, token, delay) {
         let tags = [];
         if (parts[1]) {
             // The tags are explicitly given in the second part, separated by commas.
-            tags = parts[1].split(',').map(tag => tag.trim());
+            tags = parts[1].split(',').map(tag => `:${tag.trim()}`);
         }
         else if (parts[0].includes('@')) {
             // No tag specified, use the source image digest, so the copied image will be untagged.
