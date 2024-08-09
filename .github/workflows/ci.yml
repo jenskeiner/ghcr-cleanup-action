@@ -62,20 +62,34 @@ jobs:
               'Check that no versions are removed when running with no
               arguments.'
             folder: '01_no_arguments'
-          - title: 'Include select tags'
+          - title: 'Include select tags (single arch)'
             purpose:
               'Check that specific tags and their dependents are removed
-              correctly when specified.'
-            folder: '02_include_tags'
-            include-tags: '^uclibc-1.3[23]$'
-          - title: 'Include and exclude select tags'
+              correctly when specified. (single arch)'
+            folder: '02_include_tags_single_arch'
+            include-tags: '^1.3[23]-uclibc$'
+          - title: 'Include select tags (multi-arch)'
+            purpose:
+              'Check that specific tags and their dependents are removed
+              correctly when specified. (multi-arch)'
+            folder: '03_include_tags_multi_arch'
+            include-tags: '^1.3[23]-uclibc$'
+          - title: 'Include and exclude select tags (single arch)'
             purpose:
               'Check that specific tags and their dependents are included in the
               removal when specified, as well as excluded when specified.
-              Exclusion trumps inclusion.'
-            folder: '03_include_exclude_tags'
-            include-tags: '^uclibc-1.3[23]$'
-            exclude-tags: '^uclibc-1.33$'
+              Exclusion trumps inclusion. (single arch)'
+            folder: '04_include_exclude_tags_single_arch'
+            include-tags: '^1.3[23]-uclibc$'
+            exclude-tags: '^1.33-uclibc$'
+          - title: 'Include and exclude select tags (multi-arch)'
+            purpose:
+              'Check that specific tags and their dependents are included in the
+              removal when specified, as well as excluded when specified.
+              Exclusion trumps inclusion. (multi-arch)'
+            folder: '05_include_exclude_tags_multi_arch'
+            include-tags: '^1.3[23]-uclibc$'
+            exclude-tags: '^1.33-uclibc$'
           # - title: '1a - Single: Untagged'
           #   purpose: 'Removes all untagged images (single arch)'
           #   folder: '1a_single-untagged'
