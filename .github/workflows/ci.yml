@@ -62,12 +62,20 @@ jobs:
               'Check that no versions are removed when running with no
               arguments.'
             folder: '01_no_arguments'
-          - title: 'Delete select tags'
+          - title: 'Include select tags'
             purpose:
               'Check that specific tags and their dependents are removed
               correctly when specified.'
             folder: '02_include_tags'
             include-tags: '^uclibc-1.3[23]$'
+          - title: 'Include and exclude select tags'
+            purpose:
+              'Check that specific tags and their dependents are included in the
+              removal when specified, as well as excluded when specified.
+              Exclusion trumps inclusion.'
+            folder: '03_include_exclude_tags'
+            include-tags: '^uclibc-1.3[23]$'
+            exclude-tags: '^uclibc-1.33$'
           # - title: '1a - Single: Untagged'
           #   purpose: 'Removes all untagged images (single arch)'
           #   folder: '1a_single-untagged'
