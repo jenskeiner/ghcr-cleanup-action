@@ -159,9 +159,7 @@ export class Registry {
    */
   async putManifest(tag: string, manifest: any): Promise<void> {
     if (!this.config.dryRun) {
-      const contentType = manifest.mediaType /*multiArch
-        ? 'application/vnd.oci.image.manifest.v1+json'
-        : 'application/vnd.oci.image.index.v1+json'*/
+      const contentType = manifest.mediaType
       const config = {
         headers: {
           'Content-Type': contentType
