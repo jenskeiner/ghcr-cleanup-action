@@ -217,17 +217,23 @@ class CleanupAction {
       // Clone the manifest.
       const manifest0 = JSON.parse(JSON.stringify(manifest))
 
+      core.info(`Manifest: ${JSON.stringify(manifest)}`)
+
       // Make manifest0 into a fake manifest that does not point to any other manifests or layers.
       // Push the manifest with the given tag to the registry. This creates a new version with the
       // tag and removes it from the original version.
       if (manifest0.manifests) {
+        core.info(`Removing pointers to child manifests.`)
         // Multi-arch manifest. Remove any pointers to child manifests.
         manifest0.manifests = []
-        await this.registry.putManifest(tag, manifest0, true)
+        core.info(`Manifest0: ${JSON.stringify(manifest0)}`)
+        await this.registry.putManifest(tag, manifest0)
       } else {
-        // Single-architecture or atestation manifest. Remove any pointers to layers.
+        core.info(`Removing pointers to layers.`)
+        // Single-architecture or attestation manifest. Remove any pointers to layers.
         manifest0.layers = []
-        await this.registry.putManifest(tag, manifest0, false)
+        core.info(`Manifest0: ${JSON.stringify(manifest0)}`)
+        await this.registry.putManifest(tag, manifest0)
       }
 
       // Reload the package repository to update the version cache.

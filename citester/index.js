@@ -41114,11 +41114,11 @@ class Registry {
      * @param multiArch - A boolean indicating whether the manifest is for a multi-architecture image.
      * @returns A Promise that resolves when the manifest is successfully put in the registry.
      */
-    async putManifest(tag, manifest, multiArch) {
+    async putManifest(tag, manifest) {
         if (!this.config.dryRun) {
-            const contentType = multiArch
-                ? 'application/vnd.oci.image.manifest.v1+json'
-                : 'application/vnd.oci.image.index.v1+json';
+            const contentType = manifest.mediaType; /*multiArch
+              ? 'application/vnd.oci.image.manifest.v1+json'
+              : 'application/vnd.oci.image.index.v1+json'*/
             const config = {
                 headers: {
                     'Content-Type': contentType
